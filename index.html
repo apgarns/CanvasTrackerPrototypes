@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Canvas Tracker</title>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --text: #0f172a;
+      --border: #e5e7eb;
+      --accent: #111827;
+      --accent-contrast: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell,
+      Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: var(--bg); color: var(--text);
+    }
+    .container { max-width: 1120px; margin: 0 auto; padding: 24px; }
+    h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border); background: #fff; color: var(--text); cursor: pointer; font-weight: 600; }
+    .btn:hover { background: #f3f4f6; }
+    .btn.primary { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
+    .btn.primary:hover { filter: brightness(0.95); }
+    .btn.secondary { background: #f3f4f6; }
+    .btn.sm { padding: 8px 12px; font-size: 14px; }
+
+    /* Layout */
+    .row { display: grid; grid-template-columns: 1fr; gap: 24px; }
+    @media (min-width: 900px) { .row.two { grid-template-columns: 1fr 1fr; } }
+
+    /* Card */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .card-title { font-size: 16px; font-weight: 700; }
+    .card-content { padding: 16px 20px; }
+
+    /* Inputs */
+    .field { display: grid; gap: 6px; }
+    label { font-size: 12px; font-weight: 700; color: #374151; }
+    input[type="text"], input[type="date"] { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; background: #fff; }
+    input[type="checkbox"] { width: 18px; height: 18px; }
+
+    /* Lists */
+    .list { list-style: none; padding: 0; margin: 0; }
+    .list li { display: flex; align-items: start; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 14px; }
+    .list li .title { font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .list li .meta { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .line-through { text-decoration: line-through; color: #9ca3af; font-weight: 600; }
+
+    /* Calendar */
+    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; text-align: center; font-size: 14px; }
+    .calendar .dow { font-weight: 700; color: #374151; }
+    .day { border: 1px solid var(--border); border-radius: 14px; padding: 8px; text-align: left; min-height: 88px; background: #fff; }
+    .day.out { background: #f3f4f6; color: #9ca3af; }
+    .day .num { font-size: 12px; font-weight: 700; }
+    .chip { display: block; margin-top: 6px; padding: 2px 6px; font-size: 12px; border-radius: 8px; background: rgba(0,0,0,0.06); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .more { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+    /* Header bar */
+    .bar { display: flex; align-items: center; justify-content: space-between; }
+
+    /* Toast */
+    .toast { position: fixed; right: 16px; bottom: 16px; background: #111827; color: #fff; padding: 12px 14px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.15); opacity: 0; transform: translateY(10px); transition: .2s ease; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="bar">
+      <h1>Canvas Tracker</h1>
+      <button id="toggleView" class="btn">Switch to List View</button>
+    </div>
+
+    <div id="dashboard" class="row two" aria-live="polite">
+      <div class="col left">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Add Task</div></div>
+          <div class="card-content">
+            <div class="field"><label for="title">Title</label><input id="title" type="text" placeholder="e.g., Study for midterm"></div>
+            <div class="field" style="margin-top:10px"><label for="due">Due Date</label><input id="due" type="date"></div>
+            <div class="field" style="margin-top:10px"><label for="course">Course</label><input id="course" type="text" placeholder="e.g., CS 201"></div>
+            <div style="display:flex; gap:12px; margin-top:14px">
+              <button id="addBtn" class="btn primary">Add</button>
+              <button id="syncBtn" class="btn secondary">Sync</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:24px">
+          <div class="card-header">
+            <div class="card-title">Tasks</div>
+            <button id="syncBtn2" class="btn sm">Sync</button>
+          </div>
+          <div class="card-content">
+            <ul id="taskList" class="list"></ul>
+            <div id="emptyState" style="font-size:13px;color:#6b7280">No tasks yet.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col right">
+        <div class="card">
+          <div class="card-header"><div id="monthLabel" class="card-title"></div></div>
+          <div class="card-content">
+            <div class="calendar" id="calendar">
+              <!-- populated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="listView" class="row two" style="display:none">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Tasks</div>
+          <button id="syncBtn3" class="btn sm">Sync</button>
+        </div>
+        <div class="card-content">
+          <ul id="taskListListView" class="list" style="gap:16px"></ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Add Task</div></div>
+        <div class="card-content">
+          <div class="field"><label for="title2">Title</label><input id="title2" type="text" placeholder="e.g., Study for midterm"></div>
+          <div class="field" style="margin-top:10px"><label for="due2">Due Date</label><input id="due2" type="date"></div>
+          <div class="field" style="margin-top:10px"><label for="course2">Course</label><input id="course2" type="text" placeholder="e.g., CS 201"></div>
+          <div style="margin-top:14px"><button id="addBtn2" class="btn primary">Add Task</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // ---------- Utilities ----------
+    const qs = (s, el=document) => el.querySelector(s);
+    const qsa = (s, el=document) => Array.from(el.querySelectorAll(s));
+
+    function formatPretty(iso) {
+      if (!iso) return "";
+      const d = new Date(iso);
+      return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    }
+    function ymdLocal(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+    function buildMonthGrid(year, month) {
+      const first = new Date(year, month, 1);
+      const start = new Date(first);
+      start.setDate(1 - first.getDay());
+      const days = [];
+      for (let i = 0; i < 42; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        days.push(d);
+      }
+      return { month, year, days };
+    }
+
+    function uid() { return Math.random().toString(36).slice(2,9); }
+
+    function showToast(title, desc="") {
+      const el = qs('#toast');
+      el.textContent = desc ? `${title} · ${desc}` : title;
+      el.classList.add('show');
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => el.classList.remove('show'), 1800);
+    }
+
+    // ---------- State ----------
+    const STORAGE_KEY = 'canvas-tracker-tasks-v1';
+    let tasks = loadTasks() ?? [
+      { id: uid(), title: "Syllabus Quiz", dueDate: "2025-10-29", course: "BIO 110", completed: false },
+      { id: uid(), title: "Lab 1 Pre‑Write", dueDate: "2025-11-01", course: "CHEM", completed: false },
+      { id: uid(), title: "Project Proposal", dueDate: "2025-11-06", course: "CS 201", completed: false },
+    ];
+
+    function saveTasks() { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }
+    function loadTasks() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch { return null; } }
+
+    // ---------- Rendering ----------
+    const now = new Date();
+    let currentMonth = now.getMonth();
+    let currentYear = now.getFullYear();
+
+    function renderAll() {
+      renderTasks();
+      renderListTasks();
+      renderCalendar(currentYear, currentMonth);
+    }
+
+    function renderTasks() {
+      const list = qs('#taskList');
+      list.innerHTML = '';
+      const has = tasks.length > 0;
+      qs('#emptyState').style.display = has ? 'none' : 'block';
+      tasks.forEach(t => {
+        const li = document.createElement('li');
+        const left = document.createElement('div');
+        const title = document.createElement('div');
+        title.className = 'title';
+        title.textContent = t.title;
+        if (t.completed) title.classList.add('line-through');
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        meta.textContent = `${t.course || ''}${t.course && t.dueDate ? ' · ' : ''}${t.dueDate ? 'due ' + formatPretty(t.dueDate) : ''}`;
+        left.appendChild(title); left.appendChild(meta);
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.checked = !!t.completed;
+        cb.addEventListener('change', () => toggleComplete(t.id, cb.checked));
+
+        li.appendChild(left); li.appendChild(cb);
+        list.appendChild(li);
+      });
+    }
+
+    function renderListTasks() {
+      const list = qs('#taskListListView');
+      list.innerHTML = '';
+      tasks.forEach(t => {
+        const li = document.createElement('li');
+        const leftWrap = document.createElement('div');
+        leftWrap.style.display = 'flex'; leftWrap.style.alignItems = 'center'; leftWrap.style.gap = '12px';
+
+        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!t.completed; cb.addEventListener('change', () => toggleComplete(t.id, cb.checked));
+
+        const textWrap = document.createElement('div');
+        const ttl = document.createElement('div'); ttl.className = t.completed ? 'line-through' : 'title'; ttl.textContent = t.title;
+        const meta = document.createElement('div'); meta.className = 'meta'; meta.textContent = `${t.course || ''}${t.course && t.dueDate ? ' · ' : ''}${t.dueDate ? 'due ' + formatPretty(t.dueDate) : ''}`;
+        textWrap.appendChild(ttl); textWrap.appendChild(meta);
+
+        leftWrap.appendChild(cb); leftWrap.appendChild(textWrap);
+        li.appendChild(leftWrap);
+        list.appendChild(li);
+      });
+    }
+
+    function renderCalendar(year, month) {
+      const { days } = buildMonthGrid(year, month);
+      const cal = qs('#calendar');
+      cal.innerHTML = '';
+
+      // Day-of-week header
+      const dows = ['S','M','T','W','T','F','S'];
+      dows.forEach(d => {
+        const el = document.createElement('div'); el.className = 'dow'; el.textContent = d; cal.appendChild(el);
+      });
+
+      // Days
+      days.forEach(d => {
+        const inMonth = d.getMonth() === month;
+        const iso = ymdLocal(d);
+        const dueToday = tasks.filter(t => t.dueDate === iso);
+
+        const cell = document.createElement('div');
+        cell.className = 'day' + (inMonth ? '' : ' out');
+        const num = document.createElement('div'); num.className = 'num'; num.textContent = d.getDate();
+        cell.appendChild(num);
+
+        dueToday.slice(0,2).forEach(t => {
+          const chip = document.createElement('div'); chip.className = 'chip'; chip.title = t.title; chip.textContent = t.title; cell.appendChild(chip);
+        });
+        if (dueToday.length > 2) {
+          const more = document.createElement('div'); more.className = 'more'; more.textContent = `+${dueToday.length - 2} more`; cell.appendChild(more);
+        }
+        cal.appendChild(cell);
+      });
+
+      const label = new Date(year, month).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+      qs('#monthLabel').textContent = label;
+    }
+
+    // ---------- Actions ----------
+    function addTask(from = 'A') {
+      const title = qs(from === 'A' ? '#title' : '#title2').value.trim();
+      const due = qs(from === 'A' ? '#due' : '#due2').value;
+      const course = qs(from === 'A' ? '#course' : '#course2').value.trim();
+      if (!title) { showToast('Missing title', 'Please enter a task title.'); return; }
+      const t = { id: uid(), title, dueDate: due || undefined, course: course || undefined, completed: false };
+      tasks = [t, ...tasks];
+      saveTasks();
+      (qs('#title').value = ''), (qs('#due').value = ''), (qs('#course').value = '');
+      (qs('#title2').value = ''), (qs('#due2').value = ''), (qs('#course2').value = '');
+      renderAll();
+      showToast('Task added', `${t.title}${t.dueDate ? ' · due ' + formatPretty(t.dueDate) : ''}`);
+    }
+
+    function syncWithCanvas() {
+      const year = currentYear, month = currentMonth;
+      const extra = [
+        { id: uid(), title: 'Reading Check', dueDate: ymdLocal(new Date(year, month, 12)), course: 'HIST 120', completed: false },
+        { id: uid(), title: 'Problem Set 3', dueDate: ymdLocal(new Date(year, month, 1)), course: 'MATH 150', completed: false },
+      ];
+      tasks = [...extra, ...tasks];
+      saveTasks();
+      renderAll();
+      showToast('Synced to Canvas', '2 tasks added from Canvas.');
+    }
+
+    function toggleComplete(id, checked) {
+      tasks = tasks.map(t => t.id === id ? { ...t, completed: !!checked } : t);
+      saveTasks();
+      renderAll();
+    }
+
+    // ---------- Events ----------
+    qs('#addBtn').addEventListener('click', () => addTask('A'));
+    qs('#addBtn2').addEventListener('click', () => addTask('B'));
+    qs('#syncBtn').addEventListener('click', syncWithCanvas);
+    qs('#syncBtn2').addEventListener('click', syncWithCanvas);
+    qs('#syncBtn3').addEventListener('click', syncWithCanvas);
+
+    const toggleBtn = qs('#toggleView');
+    toggleBtn.addEventListener('click', () => {
+      const dash = qs('#dashboard');
+      const list = qs('#listView');
+      const showingDash = dash.style.display !== 'none';
+      dash.style.display = showingDash ? 'none' : '';
+      list.style.display = showingDash ? '' : 'none';
+      toggleBtn.textContent = showingDash ? 'Switch to Dashboard' : 'Switch to List View';
+    });
+
+    // ---------- Init ----------
+    renderAll();
+  </script>
+</body>
+</html>
