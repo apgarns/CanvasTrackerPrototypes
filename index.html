@@ -3,341 +3,431 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Canvas Tracker</title>
+  <title>Canvas Sync – List View</title>
   <style>
-    :root {
-      --bg: #fafafa;
-      --card: #ffffff;
-      --muted: #6b7280;
-      --text: #0f172a;
-      --border: #e5e7eb;
-      --accent: #111827;
-      --accent-contrast: #ffffff;
+    :root{
+      --bg:#f6f7fb;--fg:#101114;--muted:#6b7280;--card:#ffffff;--border:#e5e7eb;
+      --primary:#2563eb;--success:#16a34a;--warn:#ea580c;--danger:#dc2626;
     }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell,
-      Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      background: var(--bg); color: var(--text);
-    }
-    .container { max-width: 1120px; margin: 0 auto; padding: 24px; }
-    h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+    body{margin:0;padding:24px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;background:var(--bg);color:var(--fg)}
+    h1{margin:0 0 4px}
+    .sub{color:var(--muted);margin:0 0 16px;font-size:14px}
+    .row{display:grid;gap:16px;grid-template-columns:1.1fr 1.4fr}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px}
+    .card h2{margin:0 0 8px;font-size:18px}
+    label{font-size:13px;color:var(--muted)}
+    input,select,button,textarea{font:inherit}
+    input[type="text"],input[type="date"],input[type="url"],input[type="password"],select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:#fff}
+    textarea{min-height:72px}
+    .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:#fff;padding:10px 14px;border-radius:12px;cursor:pointer}
+    .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+    .btn.ghost{background:transparent}
+    .stack{display:flex;gap:8px;flex-wrap:wrap}
+    .split{display:flex;gap:12px}
+    .pill{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:12px;border:1px solid var(--border);background:#fff}
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
 
-    /* Buttons */
-    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border); background: #fff; color: var(--text); cursor: pointer; font-weight: 600; }
-    .btn:hover { background: #f3f4f6; }
-    .btn.primary { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
-    .btn.primary:hover { filter: brightness(0.95); }
-    .btn.secondary { background: #f3f4f6; }
-    .btn.sm { padding: 8px 12px; font-size: 14px; }
-
-    /* Layout */
-    .row { display: grid; grid-template-columns: 1fr; gap: 24px; }
-    @media (min-width: 900px) { .row.two { grid-template-columns: 1fr 1fr; } }
-
-    /* Card */
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
-    .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-    .card-title { font-size: 16px; font-weight: 700; }
-    .card-content { padding: 16px 20px; }
-
-    /* Inputs */
-    .field { display: grid; gap: 6px; }
-    label { font-size: 12px; font-weight: 700; color: #374151; }
-    input[type="text"], input[type="date"] { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; background: #fff; }
-    input[type="checkbox"] { width: 18px; height: 18px; }
-
-    /* Lists */
-    .list { list-style: none; padding: 0; margin: 0; }
-    .list li { display: flex; align-items: start; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 14px; }
-    .list li .title { font-weight: 700; display: flex; align-items: center; gap: 8px; }
-    .list li .meta { font-size: 13px; color: var(--muted); margin-top: 2px; }
-    .line-through { text-decoration: line-through; color: #9ca3af; font-weight: 600; }
-
-    /* Calendar */
-    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; text-align: center; font-size: 14px; }
-    .calendar .dow { font-weight: 700; color: #374151; }
-    .day { border: 1px solid var(--border); border-radius: 14px; padding: 8px; text-align: left; min-height: 88px; background: #fff; }
-    .day.out { background: #f3f4f6; color: #9ca3af; }
-    .day .num { font-size: 12px; font-weight: 700; }
-    .chip { display: block; margin-top: 6px; padding: 2px 6px; font-size: 12px; border-radius: 8px; background: rgba(0,0,0,0.06); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .more { font-size: 10px; color: var(--muted); margin-top: 2px; }
-
-    /* Header bar */
-    .bar { display: flex; align-items: center; justify-content: space-between; }
+    /* List */
+    ul{list-style:none;margin:0;padding:0}
+    li.item{background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin:0 0 10px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+    .title{font-weight:600}
+    .meta{font-size:12px;color:var(--muted)}
+    .type{font-size:11px;border-radius:8px;padding:2px 8px;border:1px solid var(--border)}
+    .type.assignment{background:#eef2ff}
+    .type.event{background:#ecfeff}
+    .type.note{background:#f0fdf4}
+    .ok{color:var(--success)}
+    .warn{color:var(--warn)}
+    .danger{color:var(--danger)}
 
     /* Toast */
-    .toast { position: fixed; right: 16px; bottom: 16px; background: #111827; color: #fff; padding: 12px 14px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.15); opacity: 0; transform: translateY(10px); transition: .2s ease; pointer-events: none; }
-    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast{position:fixed;inset:auto 16px 16px auto;background:#111827;color:#fff;border-radius:12px;padding:12px 16px;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.2);opacity:0;transform:translateY(10px);transition:.25s}
+    .toast.show{opacity:1;transform:translateY(0)}
+
+    /* Dark mode */
+    .dark{--bg:#0b0c10;--fg:#e5e7eb;--muted:#9ca3af;--card:#151821;--border:#1f2430}
+    .dark input,.dark select,.dark textarea{background:#0f121a;color:var(--fg);border-color:#242a38}
+    .dark .btn{border-color:#2a3242;background:#0f121a;color:var(--fg)}
+    .dark .btn.primary{color:#fff}
+    .dark .pill{background:#0f121a;border-color:#2a3242}
+    .dark li.item{background:#0f121a;border-color:#2a3242}
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="bar">
-      <h1>Canvas Tracker</h1>
-      <button id="toggleView" class="btn">Switch to List View</button>
-    </div>
+  <h1>Tasks</h1>
+  <p class="sub">List View was preferred in testing for quick scanning of upcoming tasks. This demo adds one‑click sync with Canvas and simple filters.
+  </p>
 
-    <div id="dashboard" class="row two" aria-live="polite">
-      <div class="col left">
-        <div class="card">
-          <div class="card-header"><div class="card-title">Add Task</div></div>
-          <div class="card-content">
-            <div class="field"><label for="title">Title</label><input id="title" type="text" placeholder="e.g., Study for midterm"></div>
-            <div class="field" style="margin-top:10px"><label for="due">Due Date</label><input id="due" type="date"></div>
-            <div class="field" style="margin-top:10px"><label for="course">Course</label><input id="course" type="text" placeholder="e.g., CS 201"></div>
-            <div style="display:flex; gap:12px; margin-top:14px">
-              <button id="addBtn" class="btn primary">Add</button>
-              <button id="syncBtn" class="btn secondary">Sync</button>
-            </div>
+  <div class="row">
+    <!-- LEFT: Add/Filters -->
+    <section class="card">
+      <h2>Add Task</h2>
+      <form id="taskForm">
+        <div class="split">
+          <div style="flex:1">
+            <label for="title">Title</label>
+            <input id="title" type="text" placeholder="Read Chapter 3" required />
+          </div>
+          <div>
+            <label for="due">Due</label>
+            <input id="due" type="date" required />
           </div>
         </div>
-
-        <div class="card" style="margin-top:24px">
-          <div class="card-header">
-            <div class="card-title">Tasks</div>
-            <button id="syncBtn2" class="btn sm">Sync</button>
+        <div class="split">
+          <div style="flex:1">
+            <label for="course">Course (optional)</label>
+            <input id="course" type="text" placeholder="CS 201" />
           </div>
-          <div class="card-content">
-            <ul id="taskList" class="list"></ul>
-            <div id="emptyState" style="font-size:13px;color:#6b7280">No tasks yet.</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col right">
-        <div class="card">
-          <div class="card-header"><div id="monthLabel" class="card-title"></div></div>
-          <div class="card-content">
-            <div class="calendar" id="calendar">
-              <!-- populated by JS -->
-            </div>
+          <div style="width:160px">
+            <label for="type">Type</label>
+            <select id="type">
+              <option value="note">Personal Note</option>
+              <option value="event">Calendar Event</option>
+            </select>
           </div>
         </div>
-      </div>
-    </div>
+        <label for="details">Details (optional)</label>
+        <textarea id="details" placeholder="Any notes…"></textarea>
+        <div class="controls">
+          <label class="pill"><input id="reminder" type="checkbox" />&nbsp;Reminder</label>
+          <label class="pill"><input id="pushToCanvas" type="checkbox" checked />&nbsp;Sync to Canvas</label>
+          <button type="submit" class="btn primary">Add</button>
+          <button type="button" id="darkToggle" class="btn ghost">Toggle Dark Mode</button>
+        </div>
+      </form>
 
-    <div id="listView" class="row two" style="display:none">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Tasks</div>
-          <button id="syncBtn3" class="btn sm">Sync</button>
+      <hr style="margin:16px 0;border:none;border-top:1px solid var(--border)" />
+
+      <h2>Filters</h2>
+      <div class="split">
+        <div style="flex:1">
+          <label>Course</label>
+          <select id="filterCourse">
+            <option value="">All</option>
+          </select>
         </div>
-        <div class="card-content">
-          <ul id="taskListListView" class="list" style="gap:16px"></ul>
+        <div style="width:160px">
+          <label>Type</label>
+          <select id="filterType">
+            <option value="">All</option>
+            <option value="assignment">Assignment</option>
+            <option value="event">Event</option>
+            <option value="note">Note</option>
+          </select>
         </div>
+      </div>
+      <div class="stack" style="margin-top:10px">
+        <button class="btn" id="clearFilters">Clear Filters</button>
+      </div>
+    </section>
+
+    <!-- RIGHT: Sync + List -->
+    <section class="card">
+      <h2>Canvas Sync</h2>
+      <div class="split" style="align-items:flex-end">
+        <div style="flex:1">
+          <label for="baseUrl">Canvas Base URL</label>
+          <input id="baseUrl" type="url" placeholder="https://your-campus.instructure.com" />
+        </div>
+        <div style="flex:1">
+          <label for="token">Access Token</label>
+          <input id="token" type="password" placeholder="Paste token (stored locally)" />
+        </div>
+        <div>
+          <button id="saveCreds" class="btn">Save</button>
+        </div>
+      </div>
+      <div class="stack" style="margin-top:10px">
+        <button id="syncFrom" class="btn">Sync from Canvas</button>
+        <button id="syncWindow" class="btn">Next 30 Days</button>
       </div>
 
-      <div class="card">
-        <div class="card-header"><div class="card-title">Add Task</div></div>
-        <div class="card-content">
-          <div class="field"><label for="title2">Title</label><input id="title2" type="text" placeholder="e.g., Study for midterm"></div>
-          <div class="field" style="margin-top:10px"><label for="due2">Due Date</label><input id="due2" type="date"></div>
-          <div class="field" style="margin-top:10px"><label for="course2">Course</label><input id="course2" type="text" placeholder="e.g., CS 201"></div>
-          <div style="margin-top:14px"><button id="addBtn2" class="btn primary">Add Task</button></div>
-        </div>
-      </div>
-    </div>
+      <hr style="margin:16px 0;border:none;border-top:1px solid var(--border)" />
+
+      <h2>Upcoming</h2>
+      <ul id="list"></ul>
+    </section>
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script>
-    // ---------- Utilities ----------
-    const qs = (s, el=document) => el.querySelector(s);
-    const qsa = (s, el=document) => Array.from(el.querySelectorAll(s));
+    // -------------- Utilities --------------
+    const qs = (s, r=document) => r.querySelector(s);
+    const qsa = (s, r=document) => Array.from(r.querySelectorAll(s));
+    const fmtDate = d => new Date(d).toISOString().slice(0,10);
+    const todayISO = () => fmtDate(new Date());
+    const addDays = (d, n) => { const z = new Date(d); z.setDate(z.getDate()+n); return z; };
+    const showToast = (msg) => {
+      const el = qs('#toast'); el.textContent = msg; el.classList.add('show');
+      setTimeout(()=> el.classList.remove('show'), 2600);
+    };
 
-    function formatPretty(iso) {
-      if (!iso) return "";
-      const d = new Date(iso);
-      return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-    }
-    function ymdLocal(date) {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, "0");
-      const d = String(date.getDate()).padStart(2, "0");
-      return `${y}-${m}-${d}`;
-    }
-    function buildMonthGrid(year, month) {
-      const first = new Date(year, month, 1);
-      const start = new Date(first);
-      start.setDate(1 - first.getDay());
-      const days = [];
-      for (let i = 0; i < 42; i++) {
-        const d = new Date(start);
-        d.setDate(start.getDate() + i);
-        days.push(d);
-      }
-      return { month, year, days };
-    }
+    // Persist lightweight prefs locally (never send these off-box in this demo)
+    const PREFS_KEY = 'canvas-sync-demo';
+    const loadPrefs = () => JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
+    const savePrefs = (p) => localStorage.setItem(PREFS_KEY, JSON.stringify(p));
 
-    function uid() { return Math.random().toString(36).slice(2,9); }
+    // -------------- State --------------
+    let STATE = { items: [], filters: { course:"", type:"" } };
 
-    function showToast(title, desc="") {
-      const el = qs('#toast');
-      el.textContent = desc ? `${title} · ${desc}` : title;
-      el.classList.add('show');
-      clearTimeout(showToast._t);
-      showToast._t = setTimeout(() => el.classList.remove('show'), 1800);
-    }
-
-    // ---------- State ----------
-    const STORAGE_KEY = 'canvas-tracker-tasks-v1';
-    let tasks = loadTasks() ?? [
-      { id: uid(), title: "Syllabus Quiz", dueDate: "2025-10-29", course: "BIO 110", completed: false },
-      { id: uid(), title: "Lab 1 Pre‑Write", dueDate: "2025-11-01", course: "CHEM", completed: false },
-      { id: uid(), title: "Project Proposal", dueDate: "2025-11-06", course: "CS 201", completed: false },
-    ];
-
-    function saveTasks() { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }
-    function loadTasks() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch { return null; } }
-
-    // ---------- Rendering ----------
-    const now = new Date();
-    let currentMonth = now.getMonth();
-    let currentYear = now.getFullYear();
-
-    function renderAll() {
-      renderTasks();
-      renderListTasks();
-      renderCalendar(currentYear, currentMonth);
-    }
-
-    function renderTasks() {
-      const list = qs('#taskList');
+    // -------------- Rendering --------------
+    function render(){
+      const list = qs('#list');
       list.innerHTML = '';
-      const has = tasks.length > 0;
-      qs('#emptyState').style.display = has ? 'none' : 'block';
-      tasks.forEach(t => {
-        const li = document.createElement('li');
+      const {course, type} = STATE.filters;
+      const filtered = STATE.items.filter(x => (!course || x.course===course) && (!type || x.type===type));
+      // Sort by due date ascending
+      filtered.sort((a,b) => (a.due||'') < (b.due||'') ? -1 : (a.due||'') > (b.due||'') ? 1 : 0);
+
+      for(const x of filtered){
+        const li = document.createElement('li'); li.className = 'item';
         const left = document.createElement('div');
-        const title = document.createElement('div');
-        title.className = 'title';
-        title.textContent = t.title;
-        if (t.completed) title.classList.add('line-through');
-        const meta = document.createElement('div');
-        meta.className = 'meta';
-        meta.textContent = `${t.course || ''}${t.course && t.dueDate ? ' · ' : ''}${t.dueDate ? 'due ' + formatPretty(t.dueDate) : ''}`;
-        left.appendChild(title); left.appendChild(meta);
-
-        const cb = document.createElement('input');
-        cb.type = 'checkbox'; cb.checked = !!t.completed;
-        cb.addEventListener('change', () => toggleComplete(t.id, cb.checked));
-
-        li.appendChild(left); li.appendChild(cb);
+        const title = document.createElement('div'); title.className='title'; title.textContent = x.title;
+        const meta = document.createElement('div'); meta.className='meta';
+        const parts = [];
+        if (x.due) parts.push('Due ' + x.due);
+        if (x.course) parts.push(x.course);
+        if (x.origin) parts.push('from ' + x.origin);
+        meta.textContent = parts.join(' • ');
+        left.append(title, meta);
+        const right = document.createElement('div');
+        const chip = document.createElement('span'); chip.className = 'type ' + x.type; chip.textContent = x.type;
+        right.appendChild(chip);
+        li.append(left, right);
         list.appendChild(li);
-      });
+      }
+      hydrateFilters();
     }
 
-    function renderListTasks() {
-      const list = qs('#taskListListView');
-      list.innerHTML = '';
-      tasks.forEach(t => {
-        const li = document.createElement('li');
-        const leftWrap = document.createElement('div');
-        leftWrap.style.display = 'flex'; leftWrap.style.alignItems = 'center'; leftWrap.style.gap = '12px';
-
-        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!t.completed; cb.addEventListener('change', () => toggleComplete(t.id, cb.checked));
-
-        const textWrap = document.createElement('div');
-        const ttl = document.createElement('div'); ttl.className = t.completed ? 'line-through' : 'title'; ttl.textContent = t.title;
-        const meta = document.createElement('div'); meta.className = 'meta'; meta.textContent = `${t.course || ''}${t.course && t.dueDate ? ' · ' : ''}${t.dueDate ? 'due ' + formatPretty(t.dueDate) : ''}`;
-        textWrap.appendChild(ttl); textWrap.appendChild(meta);
-
-        leftWrap.appendChild(cb); leftWrap.appendChild(textWrap);
-        li.appendChild(leftWrap);
-        list.appendChild(li);
-      });
+    // Refresh filter dropdown with current courses present in items
+    function hydrateFilters(){
+      const sel = qs('#filterCourse');
+      const before = sel.value;
+      const courses = Array.from(new Set(STATE.items.map(x=>x.course).filter(Boolean))).sort();
+      sel.innerHTML = '<option value="">All</option>' + courses.map(c=>`<option ${c===before?'selected':''}>${c}</option>`).join('');
     }
 
-    function renderCalendar(year, month) {
-      const { days } = buildMonthGrid(year, month);
-      const cal = qs('#calendar');
-      cal.innerHTML = '';
+    // -------------- Canvas API --------------
+    function getCreds(){
+      const prefs = loadPrefs();
+      return {
+        baseUrl: qs('#baseUrl').value || prefs.baseUrl || '',
+        token: qs('#token').value || prefs.token || ''
+      };
+    }
 
-      // Day-of-week header
-      const dows = ['S','M','T','W','T','F','S'];
-      dows.forEach(d => {
-        const el = document.createElement('div'); el.className = 'dow'; el.textContent = d; cal.appendChild(el);
+    async function canvasFetch(path, {method='GET', params=null, body=null}={}){
+      const { baseUrl, token } = getCreds();
+      if(!baseUrl || !token) throw new Error('Missing Canvas base URL or token.');
+      const url = new URL(baseUrl.replace(/\/$/, '') + path);
+      if(params) Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+      const res = await fetch(url.toString(), {
+        method,
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Accept': 'application/json'
+        },
+        body: body ? JSON.stringify(body) : null
       });
+      if(!res.ok){
+        const text = await res.text().catch(()=> '');
+        throw new Error(`Canvas ${res.status}: ${text || res.statusText}`);
+      }
+      const link = res.headers.get('Link');
+      const data = await res.json();
+      return { data, link };
+    }
 
-      // Days
-      days.forEach(d => {
-        const inMonth = d.getMonth() === month;
-        const iso = ymdLocal(d);
-        const dueToday = tasks.filter(t => t.dueDate === iso);
+    // Handle typical Canvas pagination via Link header
+    function parseNext(link){
+      if(!link) return null;
+      const parts = link.split(',').map(x=>x.trim());
+      for(const p of parts){
+        const m = p.match(/<([^>]+)>; rel="next"/);
+        if(m) return m[1];
+      }
+      return null;
+    }
 
-        const cell = document.createElement('div');
-        cell.className = 'day' + (inMonth ? '' : ' out');
-        const num = document.createElement('div'); num.className = 'num'; num.textContent = d.getDate();
-        cell.appendChild(num);
+    async function fetchAll(urlOrPath){
+      const out = [];
+      let path = urlOrPath;
+      while(path){
+        const rel = path.startsWith('http') ? new URL(path).pathname + new URL(path).search : path;
+        const { data, link } = await canvasFetch(rel);
+        out.push(...data);
+        const next = parseNext(link);
+        path = next;
+      }
+      return out;
+    }
 
-        dueToday.slice(0,2).forEach(t => {
-          const chip = document.createElement('div'); chip.className = 'chip'; chip.title = t.title; chip.textContent = t.title; cell.appendChild(chip);
-        });
-        if (dueToday.length > 2) {
-          const more = document.createElement('div'); more.className = 'more'; more.textContent = `+${dueToday.length - 2} more`; cell.appendChild(more);
+    // Pull upcoming items using Planner Items (assignments, events, notes) within window
+    async function pullPlanner(startISO, endISO){
+      const params = { start_date: startISO, end_date: endISO, per_page: 50 };
+      const first = await canvasFetch('/api/v1/planner/items', { params });
+      let items = first.data;
+      let next = parseNext(first.link);
+      while(next){
+        const chunk = await fetchAll(next);
+        items = items.concat(chunk);
+        next = null; // fetchAll consumes the chain
+      }
+      // Normalize to our internal shape
+      const norm = items.map(it => {
+        const t = it.plannable_type?.toLowerCase();
+        const due = it.plannable?.due_at || it.plannable?.todo_date || it.submissions?.due_at || it.plannable?.start_at || it.plannable?.end_at || null;
+        const course = it.context_name || (it.course ? it.course.name : '') || (it.plannable?.course_id || '');
+        let type = 'event';
+        if (t === 'assignment' || t === 'quiz' || t === 'discussion_topic') type = 'assignment';
+        if (t === 'planner_note') type = 'note';
+        return {
+          title: it.plannable?.title || it.title || '(untitled)',
+          due: due ? due.slice(0,10) : '',
+          course: typeof course === 'string' ? course : '',
+          type,
+          origin: 'Canvas'
+        };
+      });
+      return norm;
+    }
+
+    // Push personal task as Planner Note or personal Calendar Event
+    async function pushTaskToCanvas({ title, due, details, type }){
+      if(type === 'note'){
+        const body = { title, details, todo_date: due };
+        await canvasFetch('/api/v1/planner_notes', { method: 'POST', body });
+        return 'Planner note created in Canvas';
+      } else {
+        // Personal calendar event on the user scope
+        const start_at = new Date(due + 'T12:00:00');
+        const end_at = new Date(start_at.getTime() + 60*60*1000);
+        const body = {
+          calendar_event: {
+            context_code: 'user_self', // Canvas accepts user_self to target the current user
+            title,
+            start_at: start_at.toISOString(),
+            end_at: end_at.toISOString(),
+            description: details || ''
+          }
+        };
+        await canvasFetch('/api/v1/calendar_events', { method: 'POST', body });
+        return 'Personal calendar event created in Canvas';
+      }
+    }
+
+    // -------------- App Wiring --------------
+    const listEl = qs('#list');
+
+    // Demo data
+    function seedDemo(){
+      const base = new Date();
+      const mk = (t, d, c, ty, o='Local') => ({title:t, due:fmtDate(addDays(base,d)), course:c, type:ty, origin:o});
+      STATE.items.push(
+        mk('Syllabus Quiz', 2, 'BIO 110', 'assignment', 'Demo'),
+        mk('Lab 1 Pre‑Write', 5, 'CHEM 121', 'assignment', 'Demo'),
+        mk('Project Proposal', 10, 'CS 201', 'assignment', 'Demo')
+      );
+    }
+
+    // Form handlers
+    qs('#taskForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = qs('#title').value.trim();
+      const due = qs('#due').value;
+      const course = qs('#course').value.trim();
+      const details = qs('#details').value.trim();
+      const reminder = qs('#reminder').checked; // placeholder for a future notification hook
+      const type = qs('#type').value; // note | event
+      if(!title || !due) return;
+
+      const item = { title, due, course, type, origin: 'Local' };
+      STATE.items.unshift(item);
+      render();
+
+      // Optional: push to Canvas
+      if(qs('#pushToCanvas').checked){
+        try{
+          const msg = await pushTaskToCanvas({ title, due, details, type });
+          showToast('Synced: ' + msg);
+        } catch(err){
+          console.error(err);
+          showToast('Could not sync to Canvas: ' + err.message);
         }
-        cal.appendChild(cell);
-      });
+      } else {
+        showToast('Task added locally');
+      }
 
-      const label = new Date(year, month).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-      qs('#monthLabel').textContent = label;
-    }
-
-    // ---------- Actions ----------
-    function addTask(from = 'A') {
-      const title = qs(from === 'A' ? '#title' : '#title2').value.trim();
-      const due = qs(from === 'A' ? '#due' : '#due2').value;
-      const course = qs(from === 'A' ? '#course' : '#course2').value.trim();
-      if (!title) { showToast('Missing title', 'Please enter a task title.'); return; }
-      const t = { id: uid(), title, dueDate: due || undefined, course: course || undefined, completed: false };
-      tasks = [t, ...tasks];
-      saveTasks();
-      (qs('#title').value = ''), (qs('#due').value = ''), (qs('#course').value = '');
-      (qs('#title2').value = ''), (qs('#due2').value = ''), (qs('#course2').value = '');
-      renderAll();
-      showToast('Task added', `${t.title}${t.dueDate ? ' · due ' + formatPretty(t.dueDate) : ''}`);
-    }
-
-    function syncWithCanvas() {
-      const year = currentYear, month = currentMonth;
-      const extra = [
-        { id: uid(), title: 'Reading Check', dueDate: ymdLocal(new Date(year, month, 12)), course: 'HIST 120', completed: false },
-        { id: uid(), title: 'Problem Set 3', dueDate: ymdLocal(new Date(year, month, 1)), course: 'MATH 150', completed: false },
-      ];
-      tasks = [...extra, ...tasks];
-      saveTasks();
-      renderAll();
-      showToast('Synced to Canvas', '2 tasks added from Canvas.');
-    }
-
-    function toggleComplete(id, checked) {
-      tasks = tasks.map(t => t.id === id ? { ...t, completed: !!checked } : t);
-      saveTasks();
-      renderAll();
-    }
-
-    // ---------- Events ----------
-    qs('#addBtn').addEventListener('click', () => addTask('A'));
-    qs('#addBtn2').addEventListener('click', () => addTask('B'));
-    qs('#syncBtn').addEventListener('click', syncWithCanvas);
-    qs('#syncBtn2').addEventListener('click', syncWithCanvas);
-    qs('#syncBtn3').addEventListener('click', syncWithCanvas);
-
-    const toggleBtn = qs('#toggleView');
-    toggleBtn.addEventListener('click', () => {
-      const dash = qs('#dashboard');
-      const list = qs('#listView');
-      const showingDash = dash.style.display !== 'none';
-      dash.style.display = showingDash ? 'none' : '';
-      list.style.display = showingDash ? '' : 'none';
-      toggleBtn.textContent = showingDash ? 'Switch to Dashboard' : 'Switch to List View';
+      e.target.reset();
+      qs('#title').focus();
     });
 
-    // ---------- Init ----------
-    renderAll();
+    // Filters
+    qs('#filterCourse').addEventListener('change', (e) => { STATE.filters.course = e.target.value; render(); });
+    qs('#filterType').addEventListener('change', (e) => { STATE.filters.type = e.target.value; render(); });
+    qs('#clearFilters').addEventListener('click', () => { STATE.filters = { course:'', type:'' }; render(); });
+
+    // Dark mode
+    qs('#darkToggle').addEventListener('click', () => document.body.classList.toggle('dark'));
+
+    // Save creds locally (never send to a server in this demo)
+    qs('#saveCreds').addEventListener('click', () => {
+      const baseUrl = qs('#baseUrl').value.trim();
+      const token = qs('#token').value.trim();
+      const next = { ...loadPrefs(), baseUrl, token };
+      savePrefs(next);
+      qs('#token').value = ''; // avoid keeping token visible in the field
+      showToast('Saved locally');
+    });
+
+    // Hydrate creds from localStorage
+    (function initCreds(){
+      const p = loadPrefs();
+      if(p.baseUrl) qs('#baseUrl').value = p.baseUrl;
+    })();
+
+    // Sync buttons
+    qs('#syncFrom').addEventListener('click', async () => {
+      try{
+        const start = new Date();
+        const end = addDays(start, 14);
+        const pulled = await pullPlanner(start.toISOString(), end.toISOString());
+        STATE.items = mergeItems(STATE.items, pulled);
+        showToast('Pulled ' + pulled.length + ' items from Canvas');
+        render();
+      } catch(err){
+        console.error(err); showToast('Sync failed: ' + err.message);
+      }
+    });
+
+    qs('#syncWindow').addEventListener('click', async () => {
+      try{
+        const start = new Date();
+        const end = addDays(start, 30);
+        const pulled = await pullPlanner(start.toISOString(), end.toISOString());
+        STATE.items = mergeItems(STATE.items, pulled);
+        showToast('Pulled next 30 days from Canvas');
+        render();
+      } catch(err){
+        console.error(err); showToast('Sync failed: ' + err.message);
+      }
+    });
+
+    // De‑dup by title+due date (simple heuristic)
+    function mergeItems(local, incoming){
+      const key = x => [x.title, x.due, x.course, x.type].join('|').toLowerCase();
+      const seen = new Set(local.map(key));
+      const merged = local.slice();
+      for(const it of incoming){ if(!seen.has(key(it))) merged.push(it); }
+      return merged;
+    }
+
+    // ---- Init ----
+    seedDemo();
+    render();
   </script>
+
+
 </body>
 </html>
