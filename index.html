@@ -3,12 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Canvas Sync – List View</title>
+  <title>Canvas Sync – List View (Full Proxy)</title>
   <style>
-    :root{
-      --bg:#f6f7fb;--fg:#101114;--muted:#6b7280;--card:#ffffff;--border:#e5e7eb;
-      --primary:#2563eb;--success:#16a34a;--warn:#ea580c;--danger:#dc2626;
-    }
+    :root{ --bg:#f6f7fb;--fg:#101114;--muted:#6b7280;--card:#ffffff;--border:#e5e7eb;--primary:#2563eb;--success:#16a34a;--warn:#ea580c;--danger:#dc2626; }
     body{margin:0;padding:24px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;background:var(--bg);color:var(--fg)}
     h1{margin:0 0 4px}
     .sub{color:var(--muted);margin:0 0 16px;font-size:14px}
@@ -17,7 +14,7 @@
     .card h2{margin:0 0 8px;font-size:18px}
     label{font-size:13px;color:var(--muted)}
     input,select,button,textarea{font:inherit}
-    input[type="text"],input[type="date"],input[type="url"],input[type="password"],select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:#fff}
+    input[type="text"],input[type="date"],select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:#fff}
     textarea{min-height:72px}
     .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:#fff;padding:10px 14px;border-radius:12px;cursor:pointer}
     .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
@@ -25,9 +22,6 @@
     .stack{display:flex;gap:8px;flex-wrap:wrap}
     .split{display:flex;gap:12px}
     .pill{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:12px;border:1px solid var(--border);background:#fff}
-    .controls{display:flex;gap:8px;flex-wrap:wrap}
-
-    /* List */
     ul{list-style:none;margin:0;padding:0}
     li.item{background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin:0 0 10px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
     .title{font-weight:600}
@@ -39,12 +33,8 @@
     .ok{color:var(--success)}
     .warn{color:var(--warn)}
     .danger{color:var(--danger)}
-
-    /* Toast */
     .toast{position:fixed;inset:auto 16px 16px auto;background:#111827;color:#fff;border-radius:12px;padding:12px 16px;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.2);opacity:0;transform:translateY(10px);transition:.25s}
     .toast.show{opacity:1;transform:translateY(0)}
-
-    /* Dark mode */
     .dark{--bg:#0b0c10;--fg:#e5e7eb;--muted:#9ca3af;--card:#151821;--border:#1f2430}
     .dark input,.dark select,.dark textarea{background:#0f121a;color:var(--fg);border-color:#242a38}
     .dark .btn{border-color:#2a3242;background:#0f121a;color:var(--fg)}
@@ -55,11 +45,9 @@
 </head>
 <body>
   <h1>Tasks</h1>
-  <p class="sub">List View was preferred in testing for quick scanning of upcoming tasks. This demo adds one‑click sync with Canvas and simple filters.
-  </p>
+  <p class="sub">Full two‑way sync using a Cloudflare Worker proxy (pull planner items, push notes/events). No token is stored in the browser.</p>
 
   <div class="row">
-    <!-- LEFT: Add/Filters -->
     <section class="card">
       <h2>Add Task</h2>
       <form id="taskForm">
@@ -81,14 +69,14 @@
           <div style="width:160px">
             <label for="type">Type</label>
             <select id="type">
-              <option value="note">Personal Note</option>
-              <option value="event">Calendar Event</option>
+              <option value="note">Planner Note</option>
+              <option value="event">Personal Event</option>
             </select>
           </div>
         </div>
         <label for="details">Details (optional)</label>
         <textarea id="details" placeholder="Any notes…"></textarea>
-        <div class="controls">
+        <div class="stack" style="margin-top:10px">
           <label class="pill"><input id="reminder" type="checkbox" />&nbsp;Reminder</label>
           <label class="pill"><input id="pushToCanvas" type="checkbox" checked />&nbsp;Sync to Canvas</label>
           <button type="submit" class="btn primary">Add</button>
@@ -121,26 +109,13 @@
       </div>
     </section>
 
-    <!-- RIGHT: Sync + List -->
     <section class="card">
       <h2>Canvas Sync</h2>
-      <div class="split" style="align-items:flex-end">
-        <div style="flex:1">
-          <label for="baseUrl">Canvas Base URL</label>
-          <input id="baseUrl" type="url" placeholder="https://your-campus.instructure.com" />
-        </div>
-        <div style="flex:1">
-          <label for="token">Access Token</label>
-          <input id="token" type="password" placeholder="Paste token (stored locally)" />
-        </div>
-        <div>
-          <button id="saveCreds" class="btn">Save</button>
-        </div>
+      <div class="stack" style="margin-top:4px">
+        <button id="syncFrom" class="btn">Sync Next 14 Days</button>
+        <button id="syncWindow" class="btn">Sync Next 30 Days</button>
       </div>
-      <div class="stack" style="margin-top:10px">
-        <button id="syncFrom" class="btn">Sync from Canvas</button>
-        <button id="syncWindow" class="btn">Next 30 Days</button>
-      </div>
+      <p class="sub" style="margin-top:8px">Uses your Worker proxy; no changes needed here beyond setting the Worker URL in the script.</p>
 
       <hr style="margin:16px 0;border:none;border-top:1px solid var(--border)" />
 
@@ -152,34 +127,23 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script>
-    // -------------- Utilities --------------
+    // ---------- Configure your Worker endpoint ----------
+    const WORKER_BASE = "https://super-mountain-9f8d.apgarns.workers.dev"; // change if you rename the worker
+
+    // ---------- Utilities ----------
     const qs = (s, r=document) => r.querySelector(s);
-    const qsa = (s, r=document) => Array.from(r.querySelectorAll(s));
     const fmtDate = d => new Date(d).toISOString().slice(0,10);
-    const todayISO = () => fmtDate(new Date());
     const addDays = (d, n) => { const z = new Date(d); z.setDate(z.getDate()+n); return z; };
-    const showToast = (msg) => {
-      const el = qs('#toast'); el.textContent = msg; el.classList.add('show');
-      setTimeout(()=> el.classList.remove('show'), 2600);
-    };
+    const showToast = (msg) => { const el = qs('#toast'); el.textContent = msg; el.classList.add('show'); setTimeout(()=> el.classList.remove('show'), 2600); };
 
-    // Persist lightweight prefs locally (never send these off-box in this demo)
-    const PREFS_KEY = 'canvas-sync-demo';
-    const loadPrefs = () => JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
-    const savePrefs = (p) => localStorage.setItem(PREFS_KEY, JSON.stringify(p));
-
-    // -------------- State --------------
     let STATE = { items: [], filters: { course:"", type:"" } };
 
-    // -------------- Rendering --------------
     function render(){
       const list = qs('#list');
       list.innerHTML = '';
       const {course, type} = STATE.filters;
       const filtered = STATE.items.filter(x => (!course || x.course===course) && (!type || x.type===type));
-      // Sort by due date ascending
       filtered.sort((a,b) => (a.due||'') < (b.due||'') ? -1 : (a.due||'') > (b.due||'') ? 1 : 0);
-
       for(const x of filtered){
         const li = document.createElement('li'); li.className = 'item';
         const left = document.createElement('div');
@@ -200,7 +164,6 @@
       hydrateFilters();
     }
 
-    // Refresh filter dropdown with current courses present in items
     function hydrateFilters(){
       const sel = qs('#filterCourse');
       const before = sel.value;
@@ -208,38 +171,25 @@
       sel.innerHTML = '<option value="">All</option>' + courses.map(c=>`<option ${c===before?'selected':''}>${c}</option>`).join('');
     }
 
-    // -------------- Canvas API --------------
-    function getCreds(){
-      const prefs = loadPrefs();
-      return {
-        baseUrl: qs('#baseUrl').value || prefs.baseUrl || '',
-        token: qs('#token').value || prefs.token || ''
-      };
-    }
-
+    // ---------- Worker-backed Canvas fetch ----------
     async function canvasFetch(path, {method='GET', params=null, body=null}={}){
-      const { baseUrl, token } = getCreds();
-      if(!baseUrl || !token) throw new Error('Missing Canvas base URL or token.');
-      const url = new URL(baseUrl.replace(/\/$/, '') + path);
-      if(params) Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
-      const res = await fetch(url.toString(), {
-        method,
-        headers: {
-          'Authorization': 'Bearer ' + token,
-          'Accept': 'application/json'
-        },
-        body: body ? JSON.stringify(body) : null
-      });
-      if(!res.ok){
-        const text = await res.text().catch(()=> '');
-        throw new Error(`Canvas ${res.status}: ${text || res.statusText}`);
+      const url = new URL(WORKER_BASE + "/proxy");
+      url.searchParams.set("path", path);
+      if (params) Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+
+      const init = { method, headers: {} };
+      if (body) { init.headers['content-type'] = 'application/json'; init.body = JSON.stringify(body); }
+
+      const res = await fetch(url.toString(), init);
+      if (!res.ok) {
+        const text = await res.text().catch(()=>"");
+        throw new Error(`Worker ${res.status}: ${text || res.statusText}`);
       }
-      const link = res.headers.get('Link');
+      const link = res.headers.get('x-pagination-link');
       const data = await res.json();
       return { data, link };
     }
 
-    // Handle typical Canvas pagination via Link header
     function parseNext(link){
       if(!link) return null;
       const parts = link.split(',').map(x=>x.trim());
@@ -263,7 +213,6 @@
       return out;
     }
 
-    // Pull upcoming items using Planner Items (assignments, events, notes) within window
     async function pullPlanner(startISO, endISO){
       const params = { start_date: startISO, end_date: endISO, per_page: 50 };
       const first = await canvasFetch('/api/v1/planner/items', { params });
@@ -272,73 +221,55 @@
       while(next){
         const chunk = await fetchAll(next);
         items = items.concat(chunk);
-        next = null; // fetchAll consumes the chain
+        next = null; // fetchAll walks the chain
       }
-      // Normalize to our internal shape
-      const norm = items.map(it => {
+      return items.map(it => {
         const t = it.plannable_type?.toLowerCase();
-        const due = it.plannable?.due_at || it.plannable?.todo_date || it.submissions?.due_at || it.plannable?.start_at || it.plannable?.end_at || null;
-        const course = it.context_name || (it.course ? it.course.name : '') || (it.plannable?.course_id || '');
+        const due = it.plannable?.due_at || it.plannable?.todo_date || it.plannable?.start_at || it.plannable?.end_at || null;
         let type = 'event';
         if (t === 'assignment' || t === 'quiz' || t === 'discussion_topic') type = 'assignment';
         if (t === 'planner_note') type = 'note';
         return {
           title: it.plannable?.title || it.title || '(untitled)',
           due: due ? due.slice(0,10) : '',
-          course: typeof course === 'string' ? course : '',
+          course: it.context_name || (it.course ? it.course.name : '') || '',
           type,
           origin: 'Canvas'
         };
       });
-      return norm;
     }
 
-    // Push personal task as Planner Note or personal Calendar Event
     async function pushTaskToCanvas({ title, due, details, type }){
       if(type === 'note'){
         const body = { title, details, todo_date: due };
         await canvasFetch('/api/v1/planner_notes', { method: 'POST', body });
         return 'Planner note created in Canvas';
       } else {
-        // Personal calendar event on the user scope
         const start_at = new Date(due + 'T12:00:00');
         const end_at = new Date(start_at.getTime() + 60*60*1000);
-        const body = {
-          calendar_event: {
-            context_code: 'user_self', // Canvas accepts user_self to target the current user
-            title,
-            start_at: start_at.toISOString(),
-            end_at: end_at.toISOString(),
-            description: details || ''
-          }
-        };
+        const body = { calendar_event: { context_code: 'user_self', title, start_at: start_at.toISOString(), end_at: end_at.toISOString(), description: details || '' } };
         await canvasFetch('/api/v1/calendar_events', { method: 'POST', body });
         return 'Personal calendar event created in Canvas';
       }
     }
 
-    // -------------- App Wiring --------------
-    const listEl = qs('#list');
-
-    // Demo data
+    // ---------- App wiring ----------
     function seedDemo(){
       const base = new Date();
-      const mk = (t, d, c, ty, o='Local') => ({title:t, due:fmtDate(addDays(base,d)), course:c, type:ty, origin:o});
+      const mk = (t, d, c, ty, o='Demo') => ({title:t, due:fmtDate(addDays(base,d)), course:c, type:ty, origin:o});
       STATE.items.push(
-        mk('Syllabus Quiz', 2, 'BIO 110', 'assignment', 'Demo'),
-        mk('Lab 1 Pre‑Write', 5, 'CHEM 121', 'assignment', 'Demo'),
-        mk('Project Proposal', 10, 'CS 201', 'assignment', 'Demo')
+        mk('Syllabus Quiz', 2, 'BIO 110', 'assignment'),
+        mk('Lab 1 Pre‑Write', 5, 'CHEM 121', 'assignment'),
+        mk('Project Proposal', 10, 'CS 201', 'assignment')
       );
     }
 
-    // Form handlers
     qs('#taskForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const title = qs('#title').value.trim();
       const due = qs('#due').value;
       const course = qs('#course').value.trim();
       const details = qs('#details').value.trim();
-      const reminder = qs('#reminder').checked; // placeholder for a future notification hook
       const type = qs('#type').value; // note | event
       if(!title || !due) return;
 
@@ -346,12 +277,11 @@
       STATE.items.unshift(item);
       render();
 
-      // Optional: push to Canvas
       if(qs('#pushToCanvas').checked){
         try{
           const msg = await pushTaskToCanvas({ title, due, details, type });
           showToast('Synced: ' + msg);
-        } catch(err){
+        }catch(err){
           console.error(err);
           showToast('Could not sync to Canvas: ' + err.message);
         }
@@ -363,31 +293,11 @@
       qs('#title').focus();
     });
 
-    // Filters
     qs('#filterCourse').addEventListener('change', (e) => { STATE.filters.course = e.target.value; render(); });
     qs('#filterType').addEventListener('change', (e) => { STATE.filters.type = e.target.value; render(); });
     qs('#clearFilters').addEventListener('click', () => { STATE.filters = { course:'', type:'' }; render(); });
-
-    // Dark mode
     qs('#darkToggle').addEventListener('click', () => document.body.classList.toggle('dark'));
 
-    // Save creds locally (never send to a server in this demo)
-    qs('#saveCreds').addEventListener('click', () => {
-      const baseUrl = qs('#baseUrl').value.trim();
-      const token = qs('#token').value.trim();
-      const next = { ...loadPrefs(), baseUrl, token };
-      savePrefs(next);
-      qs('#token').value = ''; // avoid keeping token visible in the field
-      showToast('Saved locally');
-    });
-
-    // Hydrate creds from localStorage
-    (function initCreds(){
-      const p = loadPrefs();
-      if(p.baseUrl) qs('#baseUrl').value = p.baseUrl;
-    })();
-
-    // Sync buttons
     qs('#syncFrom').addEventListener('click', async () => {
       try{
         const start = new Date();
@@ -396,9 +306,7 @@
         STATE.items = mergeItems(STATE.items, pulled);
         showToast('Pulled ' + pulled.length + ' items from Canvas');
         render();
-      } catch(err){
-        console.error(err); showToast('Sync failed: ' + err.message);
-      }
+      } catch(err){ console.error(err); showToast('Sync failed: ' + err.message); }
     });
 
     qs('#syncWindow').addEventListener('click', async () => {
@@ -409,12 +317,9 @@
         STATE.items = mergeItems(STATE.items, pulled);
         showToast('Pulled next 30 days from Canvas');
         render();
-      } catch(err){
-        console.error(err); showToast('Sync failed: ' + err.message);
-      }
+      } catch(err){ console.error(err); showToast('Sync failed: ' + err.message); }
     });
 
-    // De‑dup by title+due date (simple heuristic)
     function mergeItems(local, incoming){
       const key = x => [x.title, x.due, x.course, x.type].join('|').toLowerCase();
       const seen = new Set(local.map(key));
@@ -423,11 +328,9 @@
       return merged;
     }
 
-    // ---- Init ----
+    // Init
     seedDemo();
     render();
   </script>
-
-
 </body>
 </html>
