@@ -253,15 +253,6 @@
     }
 
     // ---------- App wiring ----------
-    function seedDemo(){
-      const base = new Date();
-      const mk = (t, d, c, ty, o='Demo') => ({title:t, due:fmtDate(addDays(base,d)), course:c, type:ty, origin:o});
-      STATE.items.push(
-        mk('Syllabus Quiz', 2, 'BIO 110', 'assignment'),
-        mk('Lab 1 Pre‑Write', 5, 'CHEM 121', 'assignment'),
-        mk('Project Proposal', 10, 'CS 201', 'assignment')
-      );
-    }
 
     qs('#taskForm').addEventListener('submit', async (e) => {
       e.preventDefault();
