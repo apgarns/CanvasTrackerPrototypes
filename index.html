@@ -1,326 +1,827 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Canvas Sync – List View (Full Proxy)</title>
-  <style>
-    :root{ --bg:#f6f7fb;--fg:#101114;--muted:#6b7280;--card:#ffffff;--border:#e5e7eb;--primary:#2563eb;--success:#16a34a;--warn:#ea580c;--danger:#dc2626; }
-    body{margin:0;padding:24px;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;background:var(--bg);color:var(--fg)}
-    h1{margin:0 0 4px}
-    .sub{color:var(--muted);margin:0 0 16px;font-size:14px}
-    .row{display:grid;gap:16px;grid-template-columns:1.1fr 1.4fr}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px}
-    .card h2{margin:0 0 8px;font-size:18px}
-    label{font-size:13px;color:var(--muted)}
-    input,select,button,textarea{font:inherit}
-    input[type="text"],input[type="date"],select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:#fff}
-    textarea{min-height:72px}
-    .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:#fff;padding:10px 14px;border-radius:12px;cursor:pointer}
-    .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
-    .btn.ghost{background:transparent}
-    .stack{display:flex;gap:8px;flex-wrap:wrap}
-    .split{display:flex;gap:12px}
-    .pill{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:12px;border:1px solid var(--border);background:#fff}
-    ul{list-style:none;margin:0;padding:0}
-    li.item{background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin:0 0 10px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
-    .title{font-weight:600}
-    .meta{font-size:12px;color:var(--muted)}
-    .type{font-size:11px;border-radius:8px;padding:2px 8px;border:1px solid var(--border)}
-    .type.assignment{background:#eef2ff}
-    .type.event{background:#ecfeff}
-    .type.note{background:#f0fdf4}
-    .ok{color:var(--success)}
-    .warn{color:var(--warn)}
-    .danger{color:var(--danger)}
-    .toast{position:fixed;inset:auto 16px 16px auto;background:#111827;color:#fff;border-radius:12px;padding:12px 16px;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.2);opacity:0;transform:translateY(10px);transition:.25s}
-    .toast.show{opacity:1;transform:translateY(0)}
-    .dark{--bg:#0b0c10;--fg:#e5e7eb;--muted:#9ca3af;--card:#151821;--border:#1f2430}
-    .dark input,.dark select,.dark textarea{background:#0f121a;color:var(--fg);border-color:#242a38}
-    .dark .btn{border-color:#2a3242;background:#0f121a;color:var(--fg)}
-    .dark .btn.primary{color:#fff}
-    .dark .pill{background:#0f121a;border-color:#2a3242}
-    .dark li.item{background:#0f121a;border-color:#2a3242}
-  </style>
-</head>
-<body>
-  <h1>Tasks</h1>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Canvas Sync – List View (Full Proxy)</title>
 
-  <div class="row">
-    <section class="card">
-      <h2>Add Task</h2>
-      <form id="taskForm">
+    <style>
+      /* ---------- Theme variables ---------- */
+      :root {
+        --bg: #f6f7fb;
+        --fg: #101114;
+        --muted: #6b7280;
+        --card: #ffffff;
+        --border: #e5e7eb;
+        --primary: #2563eb;
+        --success: #16a34a;
+        --warn: #ea580c;
+        --danger: #dc2626;
+      }
+
+      /* ---------- Base layout & typography ---------- */
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial,
+          sans-serif;
+        background: var(--bg);
+        color: var(--fg);
+      }
+
+      h1 {
+        margin: 0 0 4px;
+      }
+
+      .sub {
+        color: var(--muted);
+        margin: 0 0 16px;
+        font-size: 14px;
+      }
+
+      .row {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: 1.1fr 1.4fr;
+      }
+
+      /* ---------- Card container ---------- */
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 16px;
+      }
+
+      .card h2 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+
+      /* ---------- Form controls ---------- */
+      label {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      input,
+      select,
+      button,
+      textarea {
+        font: inherit;
+      }
+
+      input[type="text"],
+      input[type="date"],
+      select,
+      textarea {
+        width: 100%;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: #fff;
+      }
+
+      textarea {
+        min-height: 72px;
+      }
+
+      /* ---------- Buttons ---------- */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--border);
+        background: #fff;
+        padding: 10px 14px;
+        border-radius: 12px;
+        cursor: pointer;
+      }
+
+      .btn.primary {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+      }
+
+      .btn.ghost {
+        background: transparent;
+      }
+
+      /* ---------- Layout helpers ---------- */
+      .stack {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .split {
+        display: flex;
+        gap: 12px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        border: 1px solid var(--border);
+        background: #fff;
+      }
+
+      /* ---------- Task list ---------- */
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      li.item {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin: 0 0 10px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .title {
+        font-weight: 600;
+      }
+
+      .meta {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      /* ---------- Type chips ---------- */
+      .type {
+        font-size: 11px;
+        border-radius: 8px;
+        padding: 2px 8px;
+        border: 1px solid var(--border);
+      }
+
+      .type.assignment {
+        background: #eef2ff;
+      }
+
+      .type.event {
+        background: #ecfeff;
+      }
+
+      .type.note {
+        background: #f0fdf4;
+      }
+
+      /* ---------- Status colors ---------- */
+      .ok {
+        color: var(--success);
+      }
+
+      .warn {
+        color: var(--warn);
+      }
+
+      .danger {
+        color: var(--danger);
+      }
+
+      /* ---------- Toast notification ---------- */
+      .toast {
+        position: fixed;
+        inset: auto 16px 16px auto;
+        background: #111827;
+        color: #fff;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        opacity: 0;
+        transform: translateY(10px);
+        transition: 0.25s;
+      }
+
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      /* ---------- Dark mode overrides ---------- */
+      .dark {
+        --bg: #0b0c10;
+        --fg: #e5e7eb;
+        --muted: #9ca3af;
+        --card: #151821;
+        --border: #1f2430;
+      }
+
+      .dark input,
+      .dark select,
+      .dark textarea {
+        background: #0f121a;
+        color: var(--fg);
+        border-color: #242a38;
+      }
+
+      .dark .btn {
+        border-color: #2a3242;
+        background: #0f121a;
+        color: var(--fg);
+      }
+
+      .dark .btn.primary {
+        color: #fff;
+      }
+
+      .dark .pill {
+        background: #0f121a;
+        border-color: #2a3242;
+      }
+
+      .dark li.item {
+        background: #0f121a;
+        border-color: #2a3242;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Tasks</h1>
+
+    <div class="row">
+      <!-- ---------- Left column: Add Task + Filters ---------- -->
+      <section class="card">
+        <h2>Add Task</h2>
+
+        <!-- Task creation form -->
+        <form id="taskForm">
+          <div class="split">
+            <div style="flex: 1">
+              <label for="title">Title</label>
+              <input
+                id="title"
+                type="text"
+                placeholder="Read Chapter 3"
+                required
+              />
+            </div>
+
+            <div>
+              <label for="due">Due</label>
+              <input id="due" type="date" required />
+            </div>
+          </div>
+
+          <div class="split" style="margin-top: 10px">
+            <div style="flex: 1">
+              <label for="course">Course (optional)</label>
+              <input id="course" type="text" placeholder="CS 201" />
+            </div>
+
+            <div style="width: 160px">
+              <label for="type">Type</label>
+              <select id="type">
+                <option value="note">Planner Note</option>
+                <option value="event">Personal Event</option>
+              </select>
+            </div>
+          </div>
+
+          <label for="details" style="display: block; margin-top: 10px">
+            Details (optional)
+          </label>
+          <textarea id="details" placeholder="Any notes…"></textarea>
+
+          <!-- Task options + actions -->
+          <div class="stack" style="margin-top: 10px">
+            <label class="pill">
+              <input id="reminder" type="checkbox" />
+              &nbsp;Reminder
+            </label>
+
+            <label class="pill">
+              <input id="pushToCanvas" type="checkbox" checked />
+              &nbsp;Sync to Canvas
+            </label>
+
+            <button type="submit" class="btn primary">Add</button>
+            <button type="button" id="darkToggle" class="btn ghost">
+              Toggle Dark Mode
+            </button>
+          </div>
+        </form>
+
+        <hr
+          style="
+            margin: 16px 0;
+            border: none;
+            border-top: 1px solid var(--border);
+          "
+        />
+
+        <!-- Filter controls -->
+        <h2>Filters</h2>
         <div class="split">
-          <div style="flex:1">
-            <label for="title">Title</label>
-            <input id="title" type="text" placeholder="Read Chapter 3" required />
+          <div style="flex: 1">
+            <label for="filterCourse">Course</label>
+            <select id="filterCourse">
+              <option value="">All</option>
+            </select>
           </div>
-          <div>
-            <label for="due">Due</label>
-            <input id="due" type="date" required />
-          </div>
-        </div>
-        <div class="split">
-          <div style="flex:1">
-            <label for="course">Course (optional)</label>
-            <input id="course" type="text" placeholder="CS 201" />
-          </div>
-          <div style="width:160px">
-            <label for="type">Type</label>
-            <select id="type">
-              <option value="note">Planner Note</option>
-              <option value="event">Personal Event</option>
+
+          <div style="width: 160px">
+            <label for="filterType">Type</label>
+            <select id="filterType">
+              <option value="">All</option>
+              <option value="assignment">Assignment</option>
+              <option value="event">Event</option>
+              <option value="note">Note</option>
             </select>
           </div>
         </div>
-        <label for="details">Details (optional)</label>
-        <textarea id="details" placeholder="Any notes…"></textarea>
-        <div class="stack" style="margin-top:10px">
-          <label class="pill"><input id="reminder" type="checkbox" />&nbsp;Reminder</label>
-          <label class="pill"><input id="pushToCanvas" type="checkbox" checked />&nbsp;Sync to Canvas</label>
-          <button type="submit" class="btn primary">Add</button>
-          <button type="button" id="darkToggle" class="btn ghost">Toggle Dark Mode</button>
+
+        <div class="stack" style="margin-top: 10px">
+          <button class="btn" id="clearFilters">Clear Filters</button>
         </div>
-      </form>
+      </section>
 
-      <hr style="margin:16px 0;border:none;border-top:1px solid var(--border)" />
+      <!-- ---------- Right column: Canvas sync + Upcoming list ---------- -->
+      <section class="card">
+        <h2>Canvas Sync</h2>
 
-      <h2>Filters</h2>
-      <div class="split">
-        <div style="flex:1">
-          <label>Course</label>
-          <select id="filterCourse">
-            <option value="">All</option>
-          </select>
+        <!-- Sync window controls -->
+        <div class="stack" style="margin-top: 4px">
+          <button id="syncFrom" class="btn">Sync Next 14 Days</button>
+          <button id="syncWindow" class="btn">Sync Next 30 Days</button>
         </div>
-        <div style="width:160px">
-          <label>Type</label>
-          <select id="filterType">
-            <option value="">All</option>
-            <option value="assignment">Assignment</option>
-            <option value="event">Event</option>
-            <option value="note">Note</option>
-          </select>
-        </div>
-      </div>
-      <div class="stack" style="margin-top:10px">
-        <button class="btn" id="clearFilters">Clear Filters</button>
-      </div>
-    </section>
 
-    <section class="card">
-      <h2>Canvas Sync</h2>
-      <div class="stack" style="margin-top:4px">
-        <button id="syncFrom" class="btn">Sync Next 14 Days</button>
-        <button id="syncWindow" class="btn">Sync Next 30 Days</button>
-      </div>
-      
+        <hr
+          style="
+            margin: 16px 0;
+            border: none;
+            border-top: 1px solid var(--border);
+          "
+        />
 
-      <hr style="margin:16px 0;border:none;border-top:1px solid var(--border)" />
+        <!-- Upcoming tasks list -->
+        <h2>Upcoming</h2>
+        <ul id="list"></ul>
+      </section>
+    </div>
 
-      <h2>Upcoming</h2>
-      <ul id="list"></ul>
-    </section>
-  </div>
+    <!-- Toast notification element -->
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script>
+      // ============================================================
+      //  Configuration & Small Utilities
+      // ============================================================
 
-  <script>
-    // ---------- Configure your Worker endpoint ----------
-    const WORKER_BASE = "https://super-mountain-9f8d.apgarns.workers.dev"; // change if you rename the worker
+      // Worker endpoint base for Canvas proxy
+      const WORKER_BASE =
+        "https://super-mountain-9f8d.apgarns.workers.dev"; // change if you rename the worker
 
-    // ---------- Utilities ----------
-    const qs = (s, r=document) => r.querySelector(s);
-    const fmtDate = d => new Date(d).toISOString().slice(0,10);
-    const addDays = (d, n) => { const z = new Date(d); z.setDate(z.getDate()+n); return z; };
-    const showToast = (msg) => { const el = qs('#toast'); el.textContent = msg; el.classList.add('show'); setTimeout(()=> el.classList.remove('show'), 2600); };
+      // Short helper for querySelector
+      const qs = (selector, root = document) => root.querySelector(selector);
 
-    let STATE = { items: [], filters: { course:"", type:"" } };
+      // Format a Date-like input to YYYY-MM-DD
+      const fmtDate = (d) => new Date(d).toISOString().slice(0, 10);
 
-    function render(){
-      const list = qs('#list');
-      list.innerHTML = '';
-      const {course, type} = STATE.filters;
-      const filtered = STATE.items.filter(x => (!course || x.course===course) && (!type || x.type===type));
-      filtered.sort((a,b) => (a.due||'') < (b.due||'') ? -1 : (a.due||'') > (b.due||'') ? 1 : 0);
-      for(const x of filtered){
-        const li = document.createElement('li'); li.className = 'item';
-        const left = document.createElement('div');
-        const title = document.createElement('div'); title.className='title'; title.textContent = x.title;
-        const meta = document.createElement('div'); meta.className='meta';
-        const parts = [];
-        if (x.due) parts.push('Due ' + x.due);
-        if (x.course) parts.push(x.course);
-        if (x.origin) parts.push('from ' + x.origin);
-        meta.textContent = parts.join(' • ');
-        left.append(title, meta);
-        const right = document.createElement('div');
-        const chip = document.createElement('span'); chip.className = 'type ' + x.type; chip.textContent = x.type;
-        right.appendChild(chip);
-        li.append(left, right);
-        list.appendChild(li);
-      }
-      hydrateFilters();
-    }
+      // Return a new Date offset by n days
+      const addDays = (date, n) => {
+        const z = new Date(date);
+        z.setDate(z.getDate() + n);
+        return z;
+      };
 
-    function hydrateFilters(){
-      const sel = qs('#filterCourse');
-      const before = sel.value;
-      const courses = Array.from(new Set(STATE.items.map(x=>x.course).filter(Boolean))).sort();
-      sel.innerHTML = '<option value="">All</option>' + courses.map(c=>`<option ${c===before?'selected':''}>${c}</option>`).join('');
-    }
+      // Show toast message in bottom-right corner
+      const showToast = (msg) => {
+        const el = qs("#toast");
+        el.textContent = msg;
+        el.classList.add("show");
+        setTimeout(() => el.classList.remove("show"), 2600);
+      };
 
-    // ---------- Worker-backed Canvas fetch ----------
-    async function canvasFetch(path, {method='GET', params=null, body=null}={}){
-      const url = new URL(WORKER_BASE + "/proxy");
-      url.searchParams.set("path", path);
-      if (params) Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+      // App state: items (tasks) + active filters
+      let STATE = {
+        items: [],
+        filters: { course: "", type: "" },
+      };
 
-      const init = { method, headers: {} };
-      if (body) { init.headers['content-type'] = 'application/json'; init.body = JSON.stringify(body); }
+      // ============================================================
+      //  Rendering & Filter Hydration
+      // ============================================================
 
-      const res = await fetch(url.toString(), init);
-      if (!res.ok) {
-        const text = await res.text().catch(()=>"");
-        throw new Error(`Worker ${res.status}: ${text || res.statusText}`);
-      }
-      const link = res.headers.get('x-pagination-link');
-      const data = await res.json();
-      return { data, link };
-    }
+      // Render the visible task list based on STATE.items & filters
+      function render() {
+        const list = qs("#list");
+        list.innerHTML = "";
 
-    function parseNext(link){
-      if(!link) return null;
-      const parts = link.split(',').map(x=>x.trim());
-      for(const p of parts){
-        const m = p.match(/<([^>]+)>; rel="next"/);
-        if(m) return m[1];
-      }
-      return null;
-    }
+        const { course, type } = STATE.filters;
 
-    async function fetchAll(urlOrPath){
-      const out = [];
-      let path = urlOrPath;
-      while(path){
-        const rel = path.startsWith('http') ? new URL(path).pathname + new URL(path).search : path;
-        const { data, link } = await canvasFetch(rel);
-        out.push(...data);
-        const next = parseNext(link);
-        path = next;
-      }
-      return out;
-    }
+        // Apply filters
+        const filtered = STATE.items.filter(
+          (x) =>
+            (!course || x.course === course) && (!type || x.type === type)
+        );
 
-    async function pullPlanner(startISO, endISO){
-      const params = { start_date: startISO, end_date: endISO, per_page: 50 };
-      const first = await canvasFetch('/api/v1/planner/items', { params });
-      let items = first.data;
-      let next = parseNext(first.link);
-      while(next){
-        const chunk = await fetchAll(next);
-        items = items.concat(chunk);
-        next = null; // fetchAll walks the chain
-      }
-      return items.map(it => {
-        const t = it.plannable_type?.toLowerCase();
-        const due = it.plannable?.due_at || it.plannable?.todo_date || it.plannable?.start_at || it.plannable?.end_at || null;
-        let type = 'event';
-        if (t === 'assignment' || t === 'quiz' || t === 'discussion_topic') type = 'assignment';
-        if (t === 'planner_note') type = 'note';
-        return {
-          title: it.plannable?.title || it.title || '(untitled)',
-          due: due ? due.slice(0,10) : '',
-          course: it.context_name || (it.course ? it.course.name : '') || '',
-          type,
-          origin: 'Canvas'
-        };
-      });
-    }
+        // Sort by due date ascending
+        filtered.sort((a, b) => {
+          const da = a.due || "";
+          const db = b.due || "";
+          if (da < db) return -1;
+          if (da > db) return 1;
+          return 0;
+        });
 
-    async function pushTaskToCanvas({ title, due, details, type }){
-      if(type === 'note'){
-        const body = { title, details, todo_date: due };
-        await canvasFetch('/api/v1/planner_notes', { method: 'POST', body });
-        return 'Planner note created in Canvas';
-      } else {
-        const start_at = new Date(due + 'T12:00:00');
-        const end_at = new Date(start_at.getTime() + 60*60*1000);
-        const body = { calendar_event: { context_code: 'user_self', title, start_at: start_at.toISOString(), end_at: end_at.toISOString(), description: details || '' } };
-        await canvasFetch('/api/v1/calendar_events', { method: 'POST', body });
-        return 'Personal calendar event created in Canvas';
-      }
-    }
+        // Build list items
+        for (const x of filtered) {
+          const li = document.createElement("li");
+          li.className = "item";
 
-    // ---------- App wiring ----------
+          const left = document.createElement("div");
+          const title = document.createElement("div");
+          title.className = "title";
+          title.textContent = x.title;
 
-    qs('#taskForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const title = qs('#title').value.trim();
-      const due = qs('#due').value;
-      const course = qs('#course').value.trim();
-      const details = qs('#details').value.trim();
-      const type = qs('#type').value; // note | event
-      if(!title || !due) return;
+          const meta = document.createElement("div");
+          meta.className = "meta";
 
-      const item = { title, due, course, type, origin: 'Local' };
-      STATE.items.unshift(item);
-      render();
+          const parts = [];
+          if (x.due) parts.push("Due " + x.due);
+          if (x.course) parts.push(x.course);
+          if (x.origin) parts.push("from " + x.origin);
+          meta.textContent = parts.join(" • ");
 
-      if(qs('#pushToCanvas').checked){
-        try{
-          const msg = await pushTaskToCanvas({ title, due, details, type });
-          showToast('Synced: ' + msg);
-        }catch(err){
-          console.error(err);
-          showToast('Could not sync to Canvas: ' + err.message);
+          left.append(title, meta);
+
+          const right = document.createElement("div");
+          const chip = document.createElement("span");
+          chip.className = "type " + x.type;
+          chip.textContent = x.type;
+          right.appendChild(chip);
+
+          li.append(left, right);
+          list.appendChild(li);
         }
-      } else {
-        showToast('Task added locally');
+
+        // Update course filter dropdown options based on current items
+        hydrateFilters();
       }
 
-      e.target.reset();
-      qs('#title').focus();
-    });
+      // Rebuild course filter options from STATE.items
+      function hydrateFilters() {
+        const sel = qs("#filterCourse");
+        const previousValue = sel.value;
 
-    qs('#filterCourse').addEventListener('change', (e) => { STATE.filters.course = e.target.value; render(); });
-    qs('#filterType').addEventListener('change', (e) => { STATE.filters.type = e.target.value; render(); });
-    qs('#clearFilters').addEventListener('click', () => { STATE.filters = { course:'', type:'' }; render(); });
-    qs('#darkToggle').addEventListener('click', () => document.body.classList.toggle('dark'));
+        const courses = Array.from(
+          new Set(STATE.items.map((x) => x.course).filter(Boolean))
+        ).sort();
 
-    qs('#syncFrom').addEventListener('click', async () => {
-      try{
-        const start = new Date();
-        const end = addDays(start, 14);
-        const pulled = await pullPlanner(start.toISOString(), end.toISOString());
-        STATE.items = mergeItems(STATE.items, pulled);
-        showToast('Pulled ' + pulled.length + ' items from Canvas');
+        sel.innerHTML =
+          '<option value="">All</option>' +
+          courses
+            .map(
+              (c) =>
+                `<option ${c === previousValue ? "selected" : ""}>${c}</option>`
+            )
+            .join("");
+      }
+
+      // ============================================================
+      //  Canvas Worker-backed Fetch Helpers
+      // ============================================================
+
+      /**
+       * Generic fetch wrapper that talks to the Worker proxy,
+       * which in turn calls Canvas' API.
+       */
+      async function canvasFetch(path, { method = "GET", params = null, body = null } = {}) {
+        const url = new URL(WORKER_BASE + "/proxy");
+        url.searchParams.set("path", path);
+
+        if (params) {
+          Object.entries(params).forEach(([key, value]) =>
+            url.searchParams.set(key, value)
+          );
+        }
+
+        const init = {
+          method,
+          headers: {},
+        };
+
+        if (body) {
+          init.headers["content-type"] = "application/json";
+          init.body = JSON.stringify(body);
+        }
+
+        const res = await fetch(url.toString(), init);
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(`Worker ${res.status}: ${text || res.statusText}`);
+        }
+
+        const link = res.headers.get("x-pagination-link");
+        const data = await res.json();
+
+        return { data, link };
+      }
+
+      // Parse "next" link from RFC5988-style Link header
+      function parseNext(link) {
+        if (!link) return null;
+
+        const parts = link.split(",").map((x) => x.trim());
+
+        for (const p of parts) {
+          const match = p.match(/<([^>]+)>; rel="next"/);
+          if (match) return match[1];
+        }
+
+        return null;
+      }
+
+      /**
+       * Follow paginated Canvas endpoints until all pages are fetched.
+       * Accepts either a fully qualified URL or a relative path.
+       */
+      async function fetchAll(urlOrPath) {
+        const out = [];
+        let path = urlOrPath;
+
+        while (path) {
+          const isAbsolute = path.startsWith("http");
+          const rel = isAbsolute
+            ? new URL(path).pathname + new URL(path).search
+            : path;
+
+          const { data, link } = await canvasFetch(rel);
+          out.push(...data);
+
+          const next = parseNext(link);
+          path = next;
+        }
+
+        return out;
+      }
+
+      // ============================================================
+      //  Canvas Planner Pull & Task Mapping
+      // ============================================================
+
+      /**
+       * Pull planner items from Canvas between startISO and endISO
+       * and normalize them into local task objects.
+       */
+      async function pullPlanner(startISO, endISO) {
+        const params = {
+          start_date: startISO,
+          end_date: endISO,
+          per_page: 50,
+        };
+
+        // First request
+        const first = await canvasFetch("/api/v1/planner/items", { params });
+        let items = first.data;
+
+        // If there's a next page, walk the entire pagination chain
+        let next = parseNext(first.link);
+        while (next) {
+          const chunk = await fetchAll(next);
+          items = items.concat(chunk);
+          // fetchAll already walks the chain; ensure we exit loop
+          next = null;
+        }
+
+        // Normalize Canvas planner items to local model
+        return items.map((it) => {
+          const t = it.plannable_type?.toLowerCase();
+          const due =
+            it.plannable?.due_at ||
+            it.plannable?.todo_date ||
+            it.plannable?.start_at ||
+            it.plannable?.end_at ||
+            null;
+
+          let type = "event";
+          if (
+            t === "assignment" ||
+            t === "quiz" ||
+            t === "discussion_topic"
+          ) {
+            type = "assignment";
+          }
+          if (t === "planner_note") {
+            type = "note";
+          }
+
+          return {
+            title: it.plannable?.title || it.title || "(untitled)",
+            due: due ? due.slice(0, 10) : "",
+            course:
+              it.context_name ||
+              (it.course ? it.course.name : "") ||
+              "",
+            type,
+            origin: "Canvas",
+          };
+        });
+      }
+
+      // ============================================================
+      //  Push Local Tasks to Canvas (Notes & Events)
+      // ============================================================
+
+      /**
+       * Create a planner note or a personal calendar event in Canvas
+       * based on the task type.
+       */
+      async function pushTaskToCanvas({ title, due, details, type }) {
+        if (type === "note") {
+          // Create planner note
+          const body = {
+            title,
+            details,
+            todo_date: due,
+          };
+
+          await canvasFetch("/api/v1/planner_notes", {
+            method: "POST",
+            body,
+          });
+
+          return "Planner note created in Canvas";
+        } else {
+          // Create personal calendar event on user_self calendar
+          const startAt = new Date(due + "T12:00:00");
+          const endAt = new Date(startAt.getTime() + 60 * 60 * 1000);
+
+          const body = {
+            calendar_event: {
+              context_code: "user_self",
+              title,
+              start_at: startAt.toISOString(),
+              end_at: endAt.toISOString(),
+              description: details || "",
+            },
+          };
+
+          await canvasFetch("/api/v1/calendar_events", {
+            method: "POST",
+            body,
+          });
+
+          return "Personal calendar event created in Canvas";
+        }
+      }
+
+      // ============================================================
+      //  Event Wiring: Form, Filters, Sync, Dark Mode
+      // ============================================================
+
+      // Handle local task creation and optional push to Canvas
+      qs("#taskForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const title = qs("#title").value.trim();
+        const due = qs("#due").value;
+        const course = qs("#course").value.trim();
+        const details = qs("#details").value.trim();
+        const type = qs("#type").value; // "note" | "event"
+
+        if (!title || !due) return;
+
+        const item = {
+          title,
+          due,
+          course,
+          type,
+          origin: "Local",
+        };
+
+        // Prepend to items and re-render
+        STATE.items.unshift(item);
         render();
-      } catch(err){ console.error(err); showToast('Sync failed: ' + err.message); }
-    });
 
-    qs('#syncWindow').addEventListener('click', async () => {
-      try{
-        const start = new Date();
-        const end = addDays(start, 30);
-        const pulled = await pullPlanner(start.toISOString(), end.toISOString());
-        STATE.items = mergeItems(STATE.items, pulled);
-        showToast('Pulled next 30 days from Canvas');
+        // Optionally push to Canvas
+        if (qs("#pushToCanvas").checked) {
+          try {
+            const msg = await pushTaskToCanvas({
+              title,
+              due,
+              details,
+              type,
+            });
+            showToast("Synced: " + msg);
+          } catch (err) {
+            console.error(err);
+            showToast("Could not sync to Canvas: " + err.message);
+          }
+        } else {
+          showToast("Task added locally");
+        }
+
+        // Reset form and focus title
+        e.target.reset();
+        qs("#title").focus();
+      });
+
+      // Filter by course
+      qs("#filterCourse").addEventListener("change", (e) => {
+        STATE.filters.course = e.target.value;
         render();
-      } catch(err){ console.error(err); showToast('Sync failed: ' + err.message); }
-    });
+      });
 
-    function mergeItems(local, incoming){
-      const key = x => [x.title, x.due, x.course, x.type].join('|').toLowerCase();
-      const seen = new Set(local.map(key));
-      const merged = local.slice();
-      for(const it of incoming){ if(!seen.has(key(it))) merged.push(it); }
-      return merged;
-    }
+      // Filter by type (assignment | event | note)
+      qs("#filterType").addEventListener("change", (e) => {
+        STATE.filters.type = e.target.value;
+        render();
+      });
 
-    // Init
-    seedDemo();
-    render();
-  </script>
-</body>
+      // Clear all filters
+      qs("#clearFilters").addEventListener("click", () => {
+        STATE.filters = { course: "", type: "" };
+        render();
+      });
+
+      // Toggle dark mode on body
+      qs("#darkToggle").addEventListener("click", () => {
+        document.body.classList.toggle("dark");
+      });
+
+      // Sync next 14 days from Canvas planner
+      qs("#syncFrom").addEventListener("click", async () => {
+        try {
+          const start = new Date();
+          const end = addDays(start, 14);
+          const pulled = await pullPlanner(
+            start.toISOString(),
+            end.toISOString()
+          );
+
+          STATE.items = mergeItems(STATE.items, pulled);
+          showToast("Pulled " + pulled.length + " items from Canvas");
+          render();
+        } catch (err) {
+          console.error(err);
+          showToast("Sync failed: " + err.message);
+        }
+      });
+
+      // Sync next 30 days from Canvas planner
+      qs("#syncWindow").addEventListener("click", async () => {
+        try {
+          const start = new Date();
+          const end = addDays(start, 30);
+          const pulled = await pullPlanner(
+            start.toISOString(),
+            end.toISOString()
+          );
+
+          STATE.items = mergeItems(STATE.items, pulled);
+          showToast("Pulled next 30 days from Canvas");
+          render();
+        } catch (err) {
+          console.error(err);
+          showToast("Sync failed: " + err.message);
+        }
+      });
+
+      // Merge local items with incoming Canvas items, deduping by a simple key
+      function mergeItems(local, incoming) {
+        const key = (x) =>
+          [x.title, x.due, x.course, x.type].join("|").toLowerCase();
+
+        const seen = new Set(local.map(key));
+        const merged = local.slice();
+
+        for (const it of incoming) {
+          if (!seen.has(key(it))) {
+            merged.push(it);
+          }
+        }
+
+        return merged;
+      }
+
+      // ============================================================
+      //  Initialization
+      // ============================================================
+
+      // Optionally seed with demo data (implement seedDemo or remove this call)
+      if (typeof seedDemo === "function") {
+        seedDemo();
+      }
+
+      // Initial render
+      render();
+    </script>
+  </body>
 </html>
