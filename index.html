@@ -346,6 +346,10 @@
         </div>
 
         <div class="stack" style="margin-top: 10px">
+          <label class="pill">
+            <input id="urgencyToggle" type="checkbox" checked />
+            &nbsp;Highlight urgency by due date
+          </label>
           <button class="btn" id="clearFilters">Clear Filters</button>
         </div>
       </section>
@@ -382,24 +386,19 @@
       //  Configuration & Small Utilities
       // ============================================================
 
-      // Worker endpoint base for Canvas proxy
       const WORKER_BASE =
-        "https://super-mountain-9f8d.apgarns.workers.dev"; // change if you rename the worker
+        "https://super-mountain-9f8d.apgarns.workers.dev";
 
-      // Short helper for querySelector
       const qs = (selector, root = document) => root.querySelector(selector);
 
-      // Format a Date-like input to YYYY-MM-DD
       const fmtDate = (d) => new Date(d).toISOString().slice(0, 10);
 
-      // Return a new Date offset by n days
       const addDays = (date, n) => {
         const z = new Date(date);
         z.setDate(z.getDate() + n);
         return z;
       };
 
-      // Show toast message in bottom-right corner
       const showToast = (msg) => {
         const el = qs("#toast");
         el.textContent = msg;
@@ -407,30 +406,45 @@
         setTimeout(() => el.classList.remove("show"), 2600);
       };
 
-      // App state: items (tasks) + active filters
+      // App state now includes urgencyEnabled
       let STATE = {
         items: [],
         filters: { course: "", type: "" },
+        urgencyEnabled: true,
       };
+
+      // ============================================================
+      //  Urgency Helper
+      // ============================================================
+
+      function getUrgencyClass(dueStr) {
+        if (!dueStr) return "";
+        const today = new Date();
+        const endOfDay = new Date(dueStr + "T23:59:59");
+        const diffMs = endOfDay - today;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+        if (isNaN(diffDays)) return "";
+        if (diffDays < 0) return "danger"; // overdue
+        if (diffDays <= 2) return "warn";   // due very soon
+        return "ok";                        // plenty of time
+      }
 
       // ============================================================
       //  Rendering & Filter Hydration
       // ============================================================
 
-      // Render the visible task list based on STATE.items & filters
       function render() {
         const list = qs("#list");
         list.innerHTML = "";
 
         const { course, type } = STATE.filters;
 
-        // Apply filters
         const filtered = STATE.items.filter(
           (x) =>
             (!course || x.course === course) && (!type || x.type === type)
         );
 
-        // Sort by due date ascending
         filtered.sort((a, b) => {
           const da = a.due || "";
           const db = b.due || "";
@@ -439,7 +453,6 @@
           return 0;
         });
 
-        // Build list items
         for (const x of filtered) {
           const li = document.createElement("li");
           li.className = "item";
@@ -453,10 +466,25 @@
           meta.className = "meta";
 
           const parts = [];
-          if (x.due) parts.push("Due " + x.due);
+          let urgencyClass = "";
+
+          if (STATE.urgencyEnabled && x.due) {
+            urgencyClass = getUrgencyClass(x.due);
+          }
+
+          if (x.due) {
+            if (urgencyClass) {
+              parts.push(
+                `Due <span class="${urgencyClass}">${x.due}</span>`
+              );
+            } else {
+              parts.push("Due " + x.due);
+            }
+          }
           if (x.course) parts.push(x.course);
           if (x.origin) parts.push("from " + x.origin);
-          meta.textContent = parts.join(" • ");
+
+          meta.innerHTML = parts.join(" • ");
 
           left.append(title, meta);
 
@@ -470,11 +498,9 @@
           list.appendChild(li);
         }
 
-        // Update course filter dropdown options based on current items
         hydrateFilters();
       }
 
-      // Rebuild course filter options from STATE.items
       function hydrateFilters() {
         const sel = qs("#filterCourse");
         const previousValue = sel.value;
@@ -497,11 +523,10 @@
       //  Canvas Worker-backed Fetch Helpers
       // ============================================================
 
-      /**
-       * Generic fetch wrapper that talks to the Worker proxy,
-       * which in turn calls Canvas' API.
-       */
-      async function canvasFetch(path, { method = "GET", params = null, body = null } = {}) {
+      async function canvasFetch(
+        path,
+        { method = "GET", params = null, body = null } = {}
+      ) {
         const url = new URL(WORKER_BASE + "/proxy");
         url.searchParams.set("path", path);
 
@@ -534,7 +559,6 @@
         return { data, link };
       }
 
-      // Parse "next" link from RFC5988-style Link header
       function parseNext(link) {
         if (!link) return null;
 
@@ -548,10 +572,6 @@
         return null;
       }
 
-      /**
-       * Follow paginated Canvas endpoints until all pages are fetched.
-       * Accepts either a fully qualified URL or a relative path.
-       */
       async function fetchAll(urlOrPath) {
         const out = [];
         let path = urlOrPath;
@@ -576,10 +596,6 @@
       //  Canvas Planner Pull & Task Mapping
       // ============================================================
 
-      /**
-       * Pull planner items from Canvas between startISO and endISO
-       * and normalize them into local task objects.
-       */
       async function pullPlanner(startISO, endISO) {
         const params = {
           start_date: startISO,
@@ -587,20 +603,16 @@
           per_page: 50,
         };
 
-        // First request
         const first = await canvasFetch("/api/v1/planner/items", { params });
         let items = first.data;
 
-        // If there's a next page, walk the entire pagination chain
         let next = parseNext(first.link);
         while (next) {
           const chunk = await fetchAll(next);
           items = items.concat(chunk);
-          // fetchAll already walks the chain; ensure we exit loop
           next = null;
         }
 
-        // Normalize Canvas planner items to local model
         return items.map((it) => {
           const t = it.plannable_type?.toLowerCase();
           const due =
@@ -639,13 +651,8 @@
       //  Push Local Tasks to Canvas (Notes & Events)
       // ============================================================
 
-      /**
-       * Create a planner note or a personal calendar event in Canvas
-       * based on the task type.
-       */
       async function pushTaskToCanvas({ title, due, details, type }) {
         if (type === "note") {
-          // Create planner note
           const body = {
             title,
             details,
@@ -659,7 +666,6 @@
 
           return "Planner note created in Canvas";
         } else {
-          // Create personal calendar event on user_self calendar
           const startAt = new Date(due + "T12:00:00");
           const endAt = new Date(startAt.getTime() + 60 * 60 * 1000);
 
@@ -683,10 +689,9 @@
       }
 
       // ============================================================
-      //  Event Wiring: Form, Filters, Sync, Dark Mode
+      //  Event Wiring: Form, Filters, Sync, Dark Mode, Urgency Toggle
       // ============================================================
 
-      // Handle local task creation and optional push to Canvas
       qs("#taskForm").addEventListener("submit", async (e) => {
         e.preventDefault();
 
@@ -694,7 +699,7 @@
         const due = qs("#due").value;
         const course = qs("#course").value.trim();
         const details = qs("#details").value.trim();
-        const type = qs("#type").value; // "note" | "event"
+        const type = qs("#type").value;
 
         if (!title || !due) return;
 
@@ -706,11 +711,9 @@
           origin: "Local",
         };
 
-        // Prepend to items and re-render
         STATE.items.unshift(item);
         render();
 
-        // Optionally push to Canvas
         if (qs("#pushToCanvas").checked) {
           try {
             const msg = await pushTaskToCanvas({
@@ -728,35 +731,35 @@
           showToast("Task added locally");
         }
 
-        // Reset form and focus title
         e.target.reset();
         qs("#title").focus();
       });
 
-      // Filter by course
       qs("#filterCourse").addEventListener("change", (e) => {
         STATE.filters.course = e.target.value;
         render();
       });
 
-      // Filter by type (assignment | event | note)
       qs("#filterType").addEventListener("change", (e) => {
         STATE.filters.type = e.target.value;
         render();
       });
 
-      // Clear all filters
       qs("#clearFilters").addEventListener("click", () => {
         STATE.filters = { course: "", type: "" };
         render();
       });
 
-      // Toggle dark mode on body
+      // New: toggle urgency highlighting
+      qs("#urgencyToggle").addEventListener("change", (e) => {
+        STATE.urgencyEnabled = e.target.checked;
+        render();
+      });
+
       qs("#darkToggle").addEventListener("click", () => {
         document.body.classList.toggle("dark");
       });
 
-      // Sync next 14 days from Canvas planner
       qs("#syncFrom").addEventListener("click", async () => {
         try {
           const start = new Date();
@@ -775,7 +778,6 @@
         }
       });
 
-      // Sync next 30 days from Canvas planner
       qs("#syncWindow").addEventListener("click", async () => {
         try {
           const start = new Date();
@@ -794,7 +796,6 @@
         }
       });
 
-      // Merge local items with incoming Canvas items, deduping by a simple key
       function mergeItems(local, incoming) {
         const key = (x) =>
           [x.title, x.due, x.course, x.type].join("|").toLowerCase();
@@ -815,12 +816,11 @@
       //  Initialization
       // ============================================================
 
-      // Optionally seed with demo data (implement seedDemo or remove this call)
+      // If you have a seedDemo function somewhere else, this will call it.
       if (typeof seedDemo === "function") {
         seedDemo();
       }
 
-      // Initial render
       render();
     </script>
   </body>
