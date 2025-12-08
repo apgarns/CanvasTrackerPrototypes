@@ -381,13 +381,14 @@
     <!-- Toast notification element -->
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-       <script>
+    <script>
       // ============================================================
       //  Configuration & Small Utilities
       // ============================================================
 
       const WORKER_BASE =
-        "https://super-mountain-9f8d.apgarns.workers.dev";
+        "https://super-mountain-9f8d.apgarns.workers.dev"; // your worker URL
+      const CANVAS_BASE = "https://nmsu.instructure.com/"; // your Canvas base
 
       const qs = (selector, root = document) => root.querySelector(selector);
 
@@ -648,11 +649,21 @@
           }
 
           // Try to extract a usable Canvas URL
-          const url =
+          const rawUrl =
             it.html_url ||
             it.plannable?.html_url ||
             it.plannable?.url ||
             "";
+
+          // Normalize to NMSU Canvas base
+          let url = CANVAS_BASE;
+          if (rawUrl) {
+            if (rawUrl.startsWith("http")) {
+              url = rawUrl;
+            } else if (rawUrl.startsWith("/")) {
+              url = CANVAS_BASE.replace(/\/$/, "") + rawUrl;
+            }
+          }
 
           return {
             title: it.plannable?.title || it.title || "(untitled)",
@@ -730,7 +741,7 @@
           course,
           type,
           origin: "Local",
-          url: "", // local tasks have no Canvas page
+          url: "", // local-only tasks have no Canvas page
         };
 
         STATE.items.unshift(item);
@@ -772,7 +783,6 @@
         render();
       });
 
-      // New: toggle urgency highlighting
       qs("#urgencyToggle").addEventListener("change", (e) => {
         STATE.urgencyEnabled = e.target.checked;
         render();
@@ -844,6 +854,5 @@
 
       render();
     </script>
-
   </body>
 </html>
